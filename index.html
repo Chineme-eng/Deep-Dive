@@ -299,6 +299,7 @@
 </div>
 
 <script>
+// --- CONSTANTS (Keep your existing data) ---
 const ZONES = [
   { name: 'SUNLIGHT ZONE', maxDepth: 200, bgColor: '#001833', textColor: '#4ade80', pressure: '1-20 ATM', temp: '20-4°C' },
   { name: 'TWILIGHT ZONE', maxDepth: 1000, bgColor: '#000d1f', textColor: '#38bdf8', pressure: '20-100 ATM', temp: '4-0°C' },
@@ -308,38 +309,32 @@ const ZONES = [
 ];
 
 const ENCOUNTERS = [
-  // Surface (0-50m)
   { min:0, max:50, emoji:'🌊', title:'SURFACE', text:'Warm waves above. Sunlight refracts in shafts of gold. A seagull cries in the distance.' },
   { min:0, max:100, emoji:'🐠', title:'REEF FISH', text:'A flash of orange and white. A clownfish peers at you from a nearby anemone.' },
   { min:20, max:150, emoji:'🌿', title:'KELP FOREST', text:'Giant kelp sways in slow motion. Fish dart between the fronds. It is beautiful here.' },
   { min:50, max:200, emoji:'🐢', title:'SEA TURTLE', text:'An ancient sea turtle glides past, unconcerned. It has seen deeper things than you.' },
   { min:80, max:200, emoji:'🦈', title:'REEF SHARK', text:'A grey reef shark circles at a distance. It is not interested in you. Probably.' },
-  // Twilight (200-1000m)
   { min:200, max:500, emoji:'🦑', title:'GIANT SQUID', text:'A pale shape drifts in the fading blue. You cannot tell how large it is. You do not want to know.' },
   { min:200, max:600, emoji:'🔵', title:'BIOLUMINESCENCE', text:'Something in the dark below pulsed once. Blue. Then nothing. You are not alone.' },
   { min:300, max:700, emoji:'🪼', title:'DEEP JELLYFISH', text:'A translucent creature the size of a dinner plate drifts past, trailing twenty-foot tentacles.' },
   { min:400, max:900, emoji:'🐟', title:'LANTERNFISH', text:'Thousands of tiny glowing fish form a wall of light. Then they part. Something made them move.' },
   { min:600, max:1000, emoji:'😶', title:'PRESSURE', text:'The weight above you is immense. Your ears ache. The light from the surface is just a rumour now.' },
-  // Midnight (1000-4000m)
   { min:1000, max:1500, emoji:'👁️', title:'SOMETHING WATCHING', text:'A bioluminescent eye, the size of a volleyball, blinks at you from the dark. Then disappears.' },
   { min:1000, max:2000, emoji:'🦴', title:'WHALE FALL', text:'The skeleton of a whale rests on the slope. A century of life feeds from it. It is beautiful and wrong.' },
   { min:1200, max:2500, emoji:'🫧', title:'HYDROTHERMAL VENT', text:'Superheated water shimmers from a crack in the seafloor. Life thrives here impossibly.' },
   { min:1500, max:3000, emoji:'🐙', title:'DUMBO OCTOPUS', text:'A pale octopus with ear-like fins pulses gently upward. It has lived here its entire life, alone.' },
   { min:2000, max:3500, emoji:'🔮', title:'DEEP CURRENT', text:'An underwater river, colder than ice, flows through the dark. You can feel it against your suit.' },
   { min:2500, max:4000, emoji:'⚫', title:'THE VOID', text:'For a moment there is absolutely nothing in any direction. Just you and the crushing dark.' },
-  // Abyss (4000-6000m)
-  { min:4000, max:5000, emoji:'🌑', title:'ABYSSAL PLAIN', text:'You reach the bottom of the known world. Flat. Featureless. The sediment hasn't been disturbed in centuries.' },
+  { min:4000, max:5000, emoji:'🌑', title:'ABYSSAL PLAIN', text:'You reach the bottom of the known world. Flat. Featureless. The sediment hasn\'t been disturbed in centuries.' },
   { min:4000, max:5500, emoji:'🕳️', title:'TRENCH ENTRANCE', text:'A slit in the earth\'s crust descends beyond your lights. Something pale moves at its edge.' },
   { min:4500, max:5500, emoji:'🧊', title:'METHANE ICE', text:'Frozen methane covers the rocks like snow. Bacteria eat it. Slowly. This has been happening since before humans.' },
   { min:5000, max:6000, emoji:'📡', title:'LOST SIGNAL', text:'Your comms crackle. Then silence. Whatever was above you is too far away to help you now.' },
-  // Hadal (6000m+)
   { min:6000, max:7000, emoji:'🌀', title:'THE HADAL ZONE', text:'Only seven species have ever lived here. You shouldn\'t be here. They don\'t know that yet.' },
   { min:6500, max:8000, emoji:'🐛', title:'HADAL AMPHIPOD', text:'Tiny crustaceans swarm your lights. Billions of them. They carry the memory of every ship that ever sank.' },
   { min:7000, max:9000, emoji:'📜', title:'OLD MESSAGE', text:'A piece of paper floats past. The handwriting is unreadable. The date is 1943.' },
   { min:8000, max:10000, emoji:'🪞', title:'REFLECTION', text:'Your light catches something. A reflective surface. You look at it for a long time. You do not want to look at it.' },
   { min:9000, max:10900, emoji:'😶‍🌫️', title:'THE DEEPEST DEEP', text:'The Mariana Trench. The absolute bottom. No one can hear you. No one is looking. Keep going.' },
   { min:10000, max:11000, emoji:'🏔️', title:'CHALLENGER DEEP', text:'10,994 metres. The deepest known point on Earth. You are one of fewer than 20 humans to reach this depth. In fiction.' },
-  // Beyond
   { min:11001, max:99999, emoji:'❓', title:'BEYOND KNOWN DEPTH', text:'This depth does not exist on any map. The pressure would kill you instantly. The numbers no longer have meaning. What are you?' },
 ];
 
@@ -354,18 +349,29 @@ const SURFACE_MESSAGES = [
   { maxDepth: 99999, emoji:'❓', title:'BEYOND EXISTENCE', rank:'UNKNOWN ENTITY', sub:'You went past the bottom. This depth does not exist. Neither do you, apparently.' },
 ];
 
+// --- APP STATE ---
 let currentDepth = 0;
 let diving = false;
 let soundEnabled = true;
 let audioCtx = null;
 let isDark = true;
-let journal = JSON.parse(localStorage.getItem('kpDeepJournal') || '[]');
-let bestDepth = parseInt(localStorage.getItem('kpDeepBest') || '0');
+let journal = [];
+let bestDepth = 0;
 let seenEncounters = new Set();
 let journalOpen = false;
 
+// Safe Storage Initialization
+try {
+  journal = JSON.parse(localStorage.getItem('kpDeepJournal') || '[]');
+  bestDepth = parseInt(localStorage.getItem('kpDeepBest') || '0');
+} catch (e) {
+  console.warn("Storage blocked by browser security. Progress will not be saved.");
+}
+
+// --- CORE FUNCTIONS ---
 function getAudioCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
 }
 
@@ -382,13 +388,16 @@ function playTone(freq, type='sine', gain=0.06, dur=0.3) {
   } catch(e){}
 }
 
-// Ambient drone
 let droneOsc = null, droneGain = null;
 function startDrone(freq=55, targetGain=0.04) {
   if (!soundEnabled) return;
   try {
     const ctx = getAudioCtx();
-    if (droneOsc) { droneGain.gain.setTargetAtTime(0, ctx.currentTime, 0.5); setTimeout(()=>{try{droneOsc.stop();}catch(e){}}, 600); }
+    if (droneOsc) { 
+        droneGain.gain.setTargetAtTime(0, ctx.currentTime, 0.5); 
+        const oldOsc = droneOsc;
+        setTimeout(() => { try { oldOsc.stop(); } catch(e){} }, 600);
+    }
     droneOsc = ctx.createOscillator();
     droneGain = ctx.createGain();
     droneOsc.connect(droneGain); droneGain.connect(ctx.destination);
@@ -398,9 +407,16 @@ function startDrone(freq=55, targetGain=0.04) {
     droneOsc.start();
   } catch(e){}
 }
+
 function stopDrone() {
   if (!droneGain || !audioCtx) return;
-  try { droneGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.5); setTimeout(()=>{try{droneOsc&&droneOsc.stop();}catch(e){}droneOsc=null;droneGain=null;}, 700); } catch(e){}
+  try { 
+    droneGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.5); 
+    setTimeout(() => { 
+        try { if(droneOsc) droneOsc.stop(); } catch(e){}
+        droneOsc = null; droneGain = null; 
+    }, 700); 
+  } catch(e){}
 }
 
 function buildBubbles() {
@@ -437,14 +453,9 @@ function getZone(depth) {
   return ZONES[ZONES.length - 1];
 }
 
-function getEncounters(depth) {
-  return ENCOUNTERS.filter(e => depth >= e.min && depth <= e.max);
-}
-
 function pickEncounter(depth) {
-  const available = getEncounters(depth);
+  const available = ENCOUNTERS.filter(e => depth >= e.min && depth <= e.max);
   if (!available.length) return null;
-  // Prefer unseen
   const unseen = available.filter(e => !seenEncounters.has(e.title));
   const pool = unseen.length ? unseen : available;
   const picked = pool[Math.floor(Math.random() * pool.length)];
@@ -467,17 +478,10 @@ function updateUI(depth) {
   const atm = Math.round(1 + depth / 10);
   const temp = depth < 200 ? 20 - depth * 0.08 : depth < 1000 ? 4 : -1;
   document.getElementById('pressureText').textContent = `PRESSURE: ${atm} ATM · TEMP: ${Math.max(-2,temp).toFixed(0)}°C`;
-  document.getElementById('pressureText').style.color = depth > 4000 ? '#f87171' : depth > 1000 ? '#a78bfa' : '';
-
-  // Background color
-  const bgColors = ['#001833','#000d1f','#000814','#000408','#000002'];
+  
   const zIdx = ZONES.findIndex(z => depth <= z.maxDepth);
-  const bg = bgColors[Math.min(zIdx < 0 ? 4 : zIdx, 4)];
-  document.getElementById('oceanWrap').style.background = bg;
-
-  // Vignette intensity
-  const vig = Math.min(depth / 4000, 1);
-  document.getElementById('vignette').style.opacity = 0.4 + vig * 0.5;
+  document.getElementById('oceanWrap').style.background = zone.bgColor;
+  document.getElementById('vignette').style.opacity = 0.4 + (Math.min(depth / 4000, 1) * 0.5);
 }
 
 function showEncounter(enc) {
@@ -488,8 +492,6 @@ function showEncounter(enc) {
     document.getElementById('encTitle').textContent = enc.title;
     document.getElementById('encText').textContent = enc.text;
     el.classList.add('show');
-
-    // Show edge creature for certain depth ranges
     if (currentDepth > 1000 && Math.random() < 0.4) {
       const creatures = ['👁️','🦑','🐙','🪼','🦴','🌀'];
       showCreature(creatures[Math.floor(Math.random()*creatures.length)], Math.random() < 0.5 ? 'left' : 'right');
@@ -500,8 +502,8 @@ function showEncounter(enc) {
 function dive() {
   if (diving) return;
   diving = true;
+  getAudioCtx(); // Initialize audio context on first click
 
-  // Depth increment: starts small, gets bigger
   const baseInc = currentDepth < 200 ? 30 + Math.floor(Math.random()*40)
     : currentDepth < 1000 ? 80 + Math.floor(Math.random()*120)
     : currentDepth < 4000 ? 200 + Math.floor(Math.random()*300)
@@ -509,47 +511,42 @@ function dive() {
 
   currentDepth = Math.round((currentDepth + baseInc) / 10) * 10;
 
-  // Sound: lower pitch as deeper
-  const freq = Math.max(40, 200 - currentDepth / 60);
-  playTone(freq, 'sine', 0.06, 0.3);
-  startDrone(Math.max(30, 55 - currentDepth/200), 0.03 + Math.min(currentDepth/4000, 0.04));
-
   updateUI(currentDepth);
   const enc = pickEncounter(currentDepth);
   if (enc) showEncounter(enc);
 
+  playTone(Math.max(40, 200 - currentDepth / 60));
+  startDrone(Math.max(30, 55 - currentDepth/200), 0.03 + Math.min(currentDepth/4000, 0.04));
+
   document.getElementById('surfaceBtn').style.display = 'block';
   document.getElementById('diveBtn').textContent = '▼ GO DEEPER';
 
-  // Special milestones
   if (currentDepth >= 200 && currentDepth < 400) showToast('ENTERING TWILIGHT ZONE');
-  if (currentDepth >= 1000 && currentDepth < 1200) showToast('MIDNIGHT ZONE — LIGHT GONE');
-  if (currentDepth >= 4000 && currentDepth < 4400) showToast('ABYSSAL ZONE — NO RETURN POINT');
-  if (currentDepth >= 6000 && currentDepth < 6400) showToast('HADAL ZONE — YOU SHOULD LEAVE');
-  if (currentDepth >= 11000) { showToast('MAXIMUM DEPTH REACHED'); endGame(true); return; }
-
+  if (currentDepth >= 11000) { 
+    showToast('MAXIMUM DEPTH REACHED'); 
+    setTimeout(() => endGame(true), 800);
+    return; 
+  }
   diving = false;
 }
 
-function surface() {
-  endGame(false);
-}
+function surface() { endGame(false); }
 
 function endGame(maxed) {
   stopDrone();
   if (currentDepth > bestDepth) {
     bestDepth = currentDepth;
-    localStorage.setItem('kpDeepBest', bestDepth);
-    // Save to journal
-    const entry = { depth: currentDepth, date: new Date().toLocaleDateString(), maxed };
-    journal.unshift(entry);
-    if (journal.length > 20) journal.pop();
-    localStorage.setItem('kpDeepJournal', JSON.stringify(journal));
+    try {
+        localStorage.setItem('kpDeepBest', bestDepth);
+        const entry = { depth: currentDepth, date: new Date().toLocaleDateString(), maxed };
+        journal.unshift(entry);
+        if (journal.length > 20) journal.pop();
+        localStorage.setItem('kpDeepJournal', JSON.stringify(journal));
+    } catch(e){}
     renderJournal();
   }
 
   const msg = SURFACE_MESSAGES.find(m => currentDepth <= m.maxDepth) || SURFACE_MESSAGES[SURFACE_MESSAGES.length-1];
-
   document.getElementById('resultEmoji').textContent = msg.emoji;
   document.getElementById('resultTitle').textContent = maxed ? 'MAXIMUM DEPTH' : 'SURFACED';
   document.getElementById('resultDepth').textContent = currentDepth.toLocaleString() + 'm';
@@ -557,45 +554,14 @@ function endGame(maxed) {
   document.getElementById('resultSub').textContent = msg.sub;
   document.getElementById('bestDepthDisplay').textContent = `PERSONAL BEST: ${bestDepth.toLocaleString()}m`;
   document.getElementById('resultScreen').classList.add('show');
-
-  if (maxed) { playChord([523,659,784,1047]); }
-  else { playTone(220,'sine',0.06,0.6); setTimeout(()=>playTone(330,'sine',0.05,0.4),200); }
-}
-
-function playChord(freqs) {
-  freqs.forEach((f,i)=>setTimeout(()=>playTone(f,'sine',0.07,0.5),i*100));
 }
 
 function restart() {
   currentDepth = 0; diving = false; seenEncounters.clear();
   document.getElementById('resultScreen').classList.remove('show');
   document.getElementById('surfaceBtn').style.display = 'none';
-  document.getElementById('diveBtn').textContent = '▼ DIVE DEEPER';
   updateUI(0);
-  document.getElementById('oceanWrap').style.background = '#001833';
-  document.getElementById('encounter').classList.remove('show');
-  document.getElementById('encEmoji').textContent = '🌊';
-  document.getElementById('encTitle').textContent = 'SURFACE';
-  document.getElementById('encText').textContent = 'The water is warm and clear. Light filters down from above. Everything feels safe.';
-  document.getElementById('vignette').style.opacity = '0.4';
-  document.getElementById('depthNum').textContent = '0';
-  document.getElementById('depthNum').style.color = '';
-  document.getElementById('depthZone').textContent = 'SUNLIGHT ZONE';
-  document.getElementById('gaugeFill').style.height = '0%';
-  document.getElementById('gaugeMarker').textContent = '0m';
-  document.getElementById('pressureText').textContent = 'PRESSURE: 1 ATM · TEMP: 20°C';
-  document.getElementById('pressureText').style.color = '';
-  document.getElementById('creatureContainer').innerHTML = '';
-  stopDrone();
-}
-
-function shareResult() {
-  const text = `I dove ${currentDepth.toLocaleString()}m in DEEP DIVE by KP Games — rank: ${
-    (SURFACE_MESSAGES.find(m=>currentDepth<=m.maxDepth)||SURFACE_MESSAGES[SURFACE_MESSAGES.length-1]).rank
-  }. How deep can you go?`;
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(text).then(()=>showToast('COPIED TO CLIPBOARD'));
-  }
+  showEncounter({ emoji: '🌊', title: 'SURFACE', text: 'The water is warm and clear. Light filters down from above. Everything feels safe.' });
 }
 
 function showToast(msg) {
@@ -624,8 +590,7 @@ function renderJournal() {
 function toggleSound() {
   soundEnabled = !soundEnabled;
   document.getElementById('soundBtn').textContent = soundEnabled ? '🔊' : '🔇';
-  if (!soundEnabled && droneOsc) stopDrone();
-  if (soundEnabled) playTone(440,'sine',0.05,0.1);
+  if (!soundEnabled) stopDrone();
 }
 
 function toggleTheme() {
@@ -634,10 +599,11 @@ function toggleTheme() {
   document.getElementById('themeBtn').textContent = isDark ? '🌙' : '☀️';
 }
 
-// Keyboard
 document.addEventListener('keydown', e => {
-  if (e.code === 'Space' || e.code === 'ArrowDown') { e.preventDefault(); if (!document.getElementById('resultScreen').classList.contains('show')) dive(); }
-  if (e.code === 'Escape') if (journalOpen) toggleJournal();
+  if (e.code === 'Space' || e.code === 'ArrowDown') { 
+    e.preventDefault(); 
+    if (!document.getElementById('resultScreen').classList.contains('show')) dive(); 
+  }
 });
 
 buildBubbles();
